@@ -26,18 +26,26 @@ final_state([H, E|T]) :-
 % InitialState to arxiko state
 % Operators ta pancakes kato apo ta opoia benei h spatoula
 % States h lista me ola ta states mexri na ftasei ston stoxo
-% pancakes_dfs(InitialState, Operators, States) :-
-%     initial_state(State),
-%     dfs(State, [], [States]).
-    
-% move(state([H1|T1]), state([H2|T2])):-
-move(State1).
-    % display(State1).
-    
-    % T1=:=T2.
+pancakes_dfs(InitialState, Operators, States) :-
+    State = InitialState,
+    dfs(State, [State], States,Operators).
 
-    % length([H|T], N),
-    % X=\=H,
-    % X=<N,
-    % append(H, [], R),
-    % move(X, [T], R).
+dfs(State, States, States,_) :-
+    final_state(State).
+dfs(State1, SoFarStates, States, Operators) :-
+    move(State1, State2),
+    \+ member(State2, SoFarStates),
+    % Na paro to proto stoixeio tou neou state kai na to balo sta operator
+    append([E],[_|_], State2),
+    append(Operators, [E], NewOperators),
+    append(SoFarStates, [State2], NewSoFarStates),
+    dfs(State2, NewSoFarStates, States, NewOperators).
+
+
+move(State1, State2) :-
+    % State1\=[Operator|_],
+    append(Prefix, [Operator|Rest], State1),
+    reverse(Prefix, RevPrefix),
+    append([Operator|RevPrefix], Rest, State2).
+% move(State1, State2) :-
+%     append([H|T], )

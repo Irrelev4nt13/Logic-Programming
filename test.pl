@@ -23,4 +23,3 @@ depth_first_search(State1, SoFarStates, States) :-
     \+ member(State2, SoFarStates),
     append(SoFarStates, [State2], NewSoFarStates),
     depth_first_search(State2, NewSoFarStates, States).
-
