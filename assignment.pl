@@ -22,7 +22,8 @@
 % NP -> number of people
 % MT -> maximum total time
 
-% assignment(NP, MT, ASP, ASA,L1):-
+assignment(NP, MT, ASP, ASA):-
+    get_act([],MT,0,ASP).
     % write(NP),
     % write('\n'),
     % print(MT),
@@ -36,60 +37,31 @@ helper(Lim,NP):-
     write(Lim),
     Lim1 is Lim + 1,
     helper(Lim1,NP).
-
-
-
-% avoid_overlapping_activities([],[]).
-% avoid_overlapping_activities(SoFar,L1):-
-%     activity(A,_),
-%     append(SoFar,A,NewSoFar),
-%     avoid_overlapping_activities(NewSoFar,L1).
-
-% temp(L,L).
-% temp(SoFar,L):-
-%     % write(SoFar),
-%     % write("\n"),
-%     activity(X,_),
-%     % temp(T).
-%     \+ member(X,SoFar),
-%     % temp(T).
-%     % write(A),
-%     % write("\n"),
-%     append(SoFar,X,NewSoFar),
-%     % temp(T).
-%     temp(NewSoFar,L).
-
-% temp1(A,L):-
-%     \+ member(A,L),
-%     temp()
-
-% temp(SoFar,L):-
-%     activity(A,_),
-%     temp1(A,SoFar,NewSoFar),
-%     temp(NewSoFar,L).
-
-% temp1(X,L,L2):-
-%     append(L,[X],L2).
-% temp1(X,L,[]):-
-%     member(X,L).
-% non_overlapping_tasks_constr([]).
-% non_overlapping_tasks_constr([S| Rest]) :-
-%     activity(S,_),
-% 	non_overlapping_tasks_constr1(S, Rest),
-% 	non_overlapping_tasks_constr(Rest).
-
-% non_overlapping_tasks_constr1(_, []).
-% non_overlapping_tasks_constr1(S,Rest) :-
-% 	\+ member(S, Rest),
-	% non_overlapping_tasks_constr1(S , Rest).
-
-activities(L,L):-
-    findall(_,activity(_,_),Y),
-    length(Y,N),
-    length(L,N).
-activities(SoFar,L):-
-    activity(X,_),
+% lastElement([_],_).
+% lastElement([_|T],L):-
+%     lastElement(T,L).  
+% last([X],X).
+% last([_|T],R):- 
+%     last(T,R).
+% get_act(L):-
+%     get_act([],14,0,L).
+get_act(SoFar,MT,T,L):-
+% get_act(SoFar,L):-
+    activity(X,act(S,E)),
     \+ member(X,SoFar),
-    append(SoFar,[X],NewSoFar),
-    activities(NewSoFar,L),
+    % append([H],T,SoFar),
+    % last(SoFar,Y),
+    % member(H,SoFar),
+    % activity(H,act(_,E2)),
+    % (S-E2) >= 1,
+    % write(Y),
+    % write(Y),
+    T1 is (E-S)+T,
+    (S-T1) >= 1,
+    T1 =< MT,
+    append([X],SoFar,NewSoFar),
+    get_act(NewSoFar,MT,T1,L),
+    % get_act(NewSoFar,L),
     !.
+get_act(L,_,T,L-T).
+% get_act(L,L).
