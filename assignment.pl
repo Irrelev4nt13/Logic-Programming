@@ -11,4 +11,17 @@
 
 % [ Drastiriotika - Atomo ]
 
-% assignment(NP, MT, ASP, ASA).
+
+% In general 
+% activity(A, act(S, E)).
+
+% A -> activity
+% S -> starting time
+% E -> ending time
+
+
+assignment(NP, MT, ASP, ASA):-
+    write(NP),
+    write('\n'),
+    print(MT),
+    write('\n').
