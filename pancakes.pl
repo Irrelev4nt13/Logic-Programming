@@ -1,3 +1,13 @@
+/* Notes:
+ *
+ * 1. The InitialState is a list of number which represents the diameter of each pancake.
+ * 
+ * 2. Our goal is to sort the «tower» of pancakes in a way that the pancakes are in asceding order from top to bottom.
+ * 
+ * 3. 
+ *
+ * 
+ */
 % A state is represented by a list of numbers.
 % The initial state is not different from a state.
 % It is a state which is represented by a list of numbers.
