@@ -1,32 +1,41 @@
 /* Notes:
  *
- * 1. The InitialState is a list of number which represents the diameter of each pancake.
- * 
- * 2. Our goal is to sort the «tower» of pancakes in a way that the pancakes are in asceding order from top to bottom.
- * 
- * 3. 
- *
- * 
+ *      1. The InitialState is a list of number which represents the diameter of each pancake.
+ *      
+ *      2. Our goal is to sort the «tower» of pancakes in a way that the pancakes are in asceding order from top to bottom.
+ *         For that reason I made a predicate which checks if a given list is «sorted» in asceding order. 
+ *         Each time it checks if the head of the list is less or equal to the second element of the list. 
+ *         If it's true we continute the recursion with from the second element to the end and so on.
+ *         If it's not true then it stops and obviously it's not the final_state we want to end up to.
+ *      
+ *      3. pancakes_dfs is a predicate which takes as input an InitialState and through depth first search it returns a list 
+ *         called Operators which containts all the pancakes in which we place the spatoula in order to make a flip. Also,
+ *         it returns a list called States which containts all the states we need to go through, according to the operators as well,
+ *         to end up to the final_state.
+ *         
+ *      4. In order for the above to be achieved we need to make a predicate called move. The aforementioned is a predicate of 3rd grade,
+ *         it takes as input a State1 which represents a current state of the tower with the pancakes and returns the State2 which is 
+ *         the tower after the flip according to the Operator which is also returned. We first append serves to find the pancakes 
+ *         above the Operator, the pancakes in which we will put the spatoula, and flip them with the reverse. At last, we append
+ *         the operator with the reversed above part and the rest pancakes in the State2.
+ *      
+ *      5. Bonus: 
+ *               We were asked to make an implementation of the iterative deepening search which is able to find all solutions 
+ *               for the first successfull depth. In order to achieve that we need to modify the first definition of the iter predicate.
+ *               After the cut operator we call the idfs for the same limit. Practically, the 1st call of idfs serves to find the depth
+ *               to which the first solutions exists, thats why we used unknown variables for the results, while the 2nd call is used to 
+ *               get the solutions. It should be noted mention that the first solutions is 2 times but we "count" (show it) one time.
+ *               Last but not least, we need to explaine the predicate_ids which takes as input an InitialState and through the modified
+ *               idfs it returns a list called Operators which containts all the pancakes in which we place the spatoula in order to make a flip.
+ *               Also, it returns a list called States which containts all the states we need to go through, according to the operators as well,
+ *               to end up to the final_state.
  */
-% A state is represented by a list of numbers.
-% The initial state is not different from a state.
-% It is a state which is represented by a list of numbers.
-initial_state([_|_]).
 
-% The final state is a list with all elements in asceding order.
-% The base case is a list with one item which is already "sorted".
-% We could also check the empty list but it's unnecessary.
-% In any other case we traverse the list and compare it's head with the second element.
-% If it satisfies the criterias then we recursively call the final state to check
-% The rest of the list starting from the second element as the head and so on.
 final_state([_]).
 final_state([H, S|T]) :-
     H=<S,
     final_state([S|T]).
 
-% InitialState to arxiko state
-% Operators ta pancakes kato apo ta opoia benei h spatoula
-% States h lista me ola ta states mexri na ftasei ston stoxo
 pancakes_dfs(InitialState, Operators, States) :-
     dfs(InitialState, [InitialState], States, [], Operators).
 
@@ -40,21 +49,20 @@ dfs(State1, SoFarStates, States, SoFarOperators, Operators) :-
     dfs(State2, NewSoFarStates, States, NewSoFarOperators, Operators).
 
 move(State1, State2, Operator) :-
-    append(Prefix, [Operator|Rest], State1),
-    reverse(Prefix, RevPrefix),
-    append([Operator|RevPrefix], Rest, State2).
-
+    append(Above_op, [Operator|Under_op], State1),
+    reverse(Above_op, RevAbove_op),
+    append([Operator|RevAbove_op], Under_op, State2).
 
 pancakes_ids(InitialState, Operators, States) :-
-    iter(0, InitialState,States,Operators).
+    iter(0, InitialState, States, Operators).
 
-
-iter(Lim, InitialState,States,Operators) :-
-    idfs(Lim, InitialState, [InitialState], States,[],Operators),
-    !.
-iter(Lim, InitialState, States,Operators) :-
+iter(Lim, InitialState, States, Operators) :-
+    idfs(Lim, InitialState, [InitialState], _, [], _),
+    !,
+    idfs(Lim, InitialState, [InitialState], States, [], Operators).
+iter(Lim, InitialState, States, Operators) :-
     Lim1 is Lim+1,
-    iter(Lim1, InitialState, States,Operators).
+    iter(Lim1, InitialState, States, Operators).
 
 idfs(_, State, States, States, Operators, Operators) :-
     final_state(State).
