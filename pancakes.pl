@@ -1,7 +1,16 @@
 /* Notes:
  *
- *      1. The InitialState is a list of number which represents the diameter of each pancake.
- *      
+ *      1. The InitialState is a list of number which represents the diameter of each pancake. In order to ensure
+ *         that the user gives a correct sequence of pancakes I made a predicate called initial_state. It takes 
+ *         as input a list and checks whether or not it has a valid sequence of pancakes. Since the pancakes are from
+ *         1-N, with N be the size of the list it must containts number from 1-N. This is what the predicate checks.
+ *         We are using the length of the list to find all number from 1 to N with the help of the all_between predicate.
+ *         Given a lower bound, L, and an upper bound U, it returns a list with number from 1 to N. After that we have,
+ *         implemented a predicate called permutation which returns all the permutations for a given list. In this case,
+ *         we can use it in the otherway around. What I mean is that we can give it the list with numbers from 1 to N,
+ *         and the InitialState which is given as input from the user. If the InitialState is a possible permutation
+ *         then the execution we will continute otherwise it will stop.
+ *               
  *      2. Our goal is to sort the «tower» of pancakes in a way that the pancakes are in asceding order from top to bottom.
  *         For that reason I made a predicate which checks if a given list is «sorted» in asceding order. 
  *         Each time it checks if the head of the list is less or equal to the second element of the list. 
@@ -31,12 +40,34 @@
  *               to end up to the final_state.
  */
 
+initial_state(State) :-
+    length(State, Size),
+    all_between(1, Size, L),
+    permutation(State, L).
+
+permutation([], []).
+permutation([Head|Tail], PermList) :-
+    permutation(Tail, PermTail),
+    del(Head, PermList, PermTail).
+
+del(Item, [Item|List], List).
+del(Item, [First|List], [First|List1]) :-
+    del(Item, List, List1).
+
+all_between(L, U, []) :-
+    L>U.
+all_between(L, U, [L|X]) :-
+    L=<U,
+    L1 is L+1,
+    all_between(L1, U, X).
+
 final_state([_]).
 final_state([H, S|T]) :-
     H=<S,
     final_state([S|T]).
 
 pancakes_dfs(InitialState, Operators, States) :-
+    initial_state(InitialState),
     dfs(InitialState, [InitialState], States, [], Operators).
 
 dfs(State, States, States, Operators, Operators) :-
@@ -54,6 +85,7 @@ move(State1, State2, Operator) :-
     append([Operator|RevAbove_op], Under_op, State2).
 
 pancakes_ids(InitialState, Operators, States) :-
+    initial_state(InitialState),
     iter(0, InitialState, States, Operators).
 
 iter(Lim, InitialState, States, Operators) :-
