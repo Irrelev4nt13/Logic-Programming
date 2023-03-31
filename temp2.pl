@@ -85,8 +85,7 @@ temp([],MT,T,L):-
     T1 is (E-S)+T,
     T1 =< MT,
     append([X],[],NewSoFar),
-    temp(NewSoFar,MT,T1,E,L),
-    !.
+    temp(NewSoFar,MT,T1,E,L).
 temp(SoFar,MT,T,LE,L):-
     activity(X,act(S,E)),
     \+ member(X,SoFar),

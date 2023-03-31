@@ -3,7 +3,17 @@
 assignment(NP, MT, ASP, ASA) :-
     findall(AId, activity(AId, _), AIds), % Gather all activities in list AIds
     assign(AIds, NP, MT, ASA),
-    test(NP, ASA, ASP).
+    % between(1, NP, PId),
+    findall(X, member(X-1, ASA), Temp),
+    findall(Y, member(Y-2, ASA), Temp2),
+    findall(Z, member(Z-3, ASA), Temp3),
+    temp(Temp,0,T1),
+    temp(Temp2,0,T2),
+    temp(Temp3,0,T3),
+    append([1-Temp-T1],[2-Temp2-T2],ASP_T),
+    append(ASP_T,[3-Temp3-T3], ASP).
+    % make_asp(1,ASA,_,_).
+    % append().
 
 assign([], _, _, []).
 assign([AId|AIds], NP, MT, [AId-PId|ASA]) :-
@@ -22,26 +32,20 @@ valid(Ab1, Ae1, MT, TT, [APId|APIds]) :-
     Ab2-Ae1>=1,
     valid(Ab1, Ae1, MT, TT1, APIds).
 
-test(_, [], []).
-test(NP, ASA, ASP):-
-    make(1,NP,ASA,[],ASP).
+% make_asp([],_,ASP,ASP).
+% make_asp(ASA,PId,SoFar,ASP):-
+%     findall(APId, member(APId-PId, ASA), L),
+%     append(ASP,[L],NewSoFar),
+% make_asp([],[]).
+% make_asp(ASA,ASP):-
 
-make(I,N,_,ASP,ASP):- I>N.
-make(PId,N,ASA,SoFar,ASP):-
-    PId=<N,
-    I1 is PId+1,
-    findall(APId, member(APId-PId, ASA), Temp),
-    reverse(Temp,APIds),
-    test2(APIds, 0, T),
-    append(SoFar,[PId-APIds-T], New),
-    make(I1,N,ASA,New,ASP).
-    % writeln(P).
+temp([],TT,TT).
+temp([H|T],CT,TT):-
+    activity(H,act(A,B)),
+    CT2 is ((B-A)+CT),
+    temp(T,CT2,TT).
 
-test2([], TT, TT).
-test2([H|T],CT, TT):-
-    activity(H,act(S,E)),
-    CT1 is ((E-S)+CT),
-    test2(T,CT1, TT).
+
 
 between(L, U, L) :-
     L=<U.
