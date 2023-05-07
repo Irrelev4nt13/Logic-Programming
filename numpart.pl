@@ -34,7 +34,7 @@ numpart(N, L1, L2) :-
 
 constrain([H|T], N):-
     H #= 1,
-    ic_global:alldifferent([H|T]),
+    ic:alldifferent([H|T]),
     ordered_sum([H|T], S1),
     S2 is N*(N+1)//4,
     S1 #= S2,
