@@ -1,96 +1,158 @@
-/*
- * TODO:
- *      1. Get white boxes
- *      2. Assign them to variables with form X_i
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
- * 
+/* Notes:
+ *
+ *      1.
+ *
+ *      2.
+ *
+ *      3.
+ *
  */
-
 
 :- compile("crosswords/cross01").
 
-crossword(S):-   
+crossword(S) :-
+    make_tmpl(T), 
+    make_domains(T, [], Domains),
+    combine_soldom(T, Domains, SolDom),
+    generate_solution_with_fc_mrv(SolDom),
+    % make_sol(T, [], S),
+    !.
+
+make_sol([], S, S).
+make_sol([H|T], SoFar, S):-
+    name(L, H),
+    append(SoFar, [L], NewSoFar),
+    make_sol(T, NewSoFar, S).
+
+generate_solution_with_fc_mrv([]).
+generate_solution_with_fc_mrv(SolDom1) :-
+   mrv_var(SolDom1, X-Domain, SolDom2),
+   member(X, Domain),
+   update_domains(X, SolDom2, SolDom3).
+%    generate_solution_with_fc_mrv(SolDom3).
+
+mrv_var([X-Domain], X-Domain, []).
+mrv_var([X1-Domain1|SolDom1], X-Domain, SolDom3) :-
+   mrv_var(SolDom1, X2-Domain2, SolDom2),
+   length(Domain1, N1),
+   length(Domain2, N2),
+   (N1 < N2 ->
+      (X = X1,
+       Domain = Domain1,
+       SolDom3 = SolDom1) ;
+      (X = X2,
+       Domain = Domain2,
+       SolDom3 = [X1-Domain1|SolDom2])).
+
+
+update_domains(_, [], []).
+update_domains(X, [Y-Domain1|SolDom1], [Y-Domain2|SolDom2]) :-
+   update_domain(X, Domain1, Domain2),
+   update_domains(X, SolDom1, SolDom2).
+
+update_domain(X, Domain1, Domain2) :-
+   remove_if_exists(X, Domain1, Domain2),
+   writeln(Domain1).
+
+remove_if_exists(_, [], []).
+remove_if_exists(X, [X|List], List) :-
+   !.
+remove_if_exists(X, [Y|List1], [Y|List2]) :-
+   remove_if_exists(X, List1, List2).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+combine_soldom([], _, []).
+combine_soldom([X|S], [Domain|RestDomains], [X-Domain|SolDom]) :-
+   combine_soldom(S, RestDomains, SolDom).
+
+make_domains([], Domains, Domains).
+make_domains([H|T], SoFar, Domains):-
+    make_domain(H, Domain),
+    append(SoFar, [Domain], NewSoFar),
+    make_domains(T, NewSoFar, Domains).
+    % writeln(NewSoFar).
+
+make_domain(H, Domain):-
+    % writeln(H),
+    length(H, N),
+    words(Words),
+    findall(Ascii, (member(X, Words), name(X, Ascii), length(Ascii, N1), N =:= N1), Domain).
+    % writeln(Domain).
+    % writeln(N).
+
+make_tmpl(T) :-
     dimension(D),
-    findall((X,Y), black(X,Y), BlackBoxes),
-    % writeln(D),
-    % writeln(BlackBoxes),
-    make_tmpl(D, Board),
-    writeln(Board),
-    writeln("\n"),
-    Board = [H|_],
-    H = [T|_],
-    writeln(H),
-    writeln("\n"),
-    name(T,[97]),
-    writeln(T),
-    writeln("\n"),
-    print_crossword(Board).
-    % length(T,D).
-    % findall((X,Y),(between(1,D,X),between(1,D,Y),\+member((X,Y),BlackBoxes)), A),
-    % make_tmpl(0,0,D).
+    horizontal(1, 0, D, 0, [], H),
+    vertical(0, 1, D, 0, [], V),
+    append(H, V, T).
 
-
-make_tmpl(D, Board):-
-    make_tmpl(0, D, [], Board).
-make_tmpl(D, D, B, B):-!.
-make_tmpl(I, D, B, B1):-
-    I < D, 
-    length(T, D),
-    append(B, [T], B2),
+horizontal(N, N, N, _, R, R).
+horizontal(I, J, N, C, SoFar, R):-
+    J =:= N,
+    (C > 1 ->
+    length(T, C),
+    % writeln(T),
+    append(SoFar, [T], NewSoFar) ; NewSoFar = SoFar, true),
     I1 is I+1,
-    make_tmpl(I1, D, B2, B1).
-% make_tmpl(I, D, BlackBoxes, Board):-
-%     I < N,
-%     length(S, D), 
-%     append()
-% make_tmpl(_, N,N,N).
-% make_tmpl(C, I, N, N):- nl,
-%     I < N-1,
-%     I1 is I+1,
-%     make_tmpl(C, I1,0,N).
-% make_tmpl(C, I, J, N):-
-%     J < N,
-%     J1 is J+1,
-%     IT is I+1,
-%     (black(IT,J1) -> print(###) ; (print("X"),
-%     print(C), C1 is C+1)),
-%     print(" "),
-%     make_tmpl(C1, I, J1, N).
+    horizontal(I1, 0, N, 0, NewSoFar, R).
+horizontal(I, J, N, C, SoFar, R):-
+    J < N,
+    J1 is J+1,
+    (
+        black(I, J1) ->
+        (C > 1 ->
+        length(T, C),
+        % writeln(T),
+        append(SoFar, [T], NewSoFar)
+        ; NewSoFar = SoFar, true),
+        C1 is 0 ;
+        NewSoFar = SoFar,
+        C1 is C+1
+    ),
+    horizontal(I, J1, N, C1, NewSoFar, R).
 
-print_crossword([]).
-print_crossword([H|T]):-
-    print_helper(H),
-    print_crossword(T),!.
-
-print_helper([]).
-print_helper([X]):- 
-    (X \= ### -> write(' ') ; true), 
-    write(X), 
-    (X \= ### -> writeln(' ') ; writeln('')).
-print_helper([H|T]):-
-    (H \= ### -> write(' ') ; true),
-    write(H),
-    (H \= ### -> write(' ') ; true),
-    print_helper(T).
-
-between(L, U, L) :-
-    L=<U.
-between(L, U, X) :-
-    L<U,
-    L1 is L+1,
-    between(L1, U, X).
-
-
-all_between(L, U, []) :-
-    L>U.
-all_between(L, U, [L|X]) :-
-    L=<U,
-    L1 is L+1,
-    all_between(L1, U, X).
+vertical(N, N, N, _, R, R).
+vertical(I, J, N, C, SoFar, R):-
+    I =:= N,
+    (C > 1 ->
+    length(T, C),
+    % writeln(T),
+    append(SoFar, [T], NewSoFar) ; NewSoFar = SoFar, true),
+    J1 is J+1,
+    vertical(0, J1, N, 0, NewSoFar, R).
+vertical(I, J, N, C, SoFar, R):-
+    I < N,
+    I1 is I+1,
+    (
+        black(I1, J) ->
+        (C > 1 ->
+        length(T, C),
+        % writeln(T),
+        append(SoFar, [T], NewSoFar)
+        ; NewSoFar = SoFar, true),
+        C1 is 0 ;
+        NewSoFar = SoFar,
+        C1 is C+1
+    ),
+    vertical(I1, J, N, C1, NewSoFar, R).
