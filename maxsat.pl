@@ -14,8 +14,6 @@
  *         have noted some of the fastest combinations I found.
  */
 
-:- compile(randms).
-
 :- set_flag(print_depth, 1000).
 :- lib(ic).
 :- lib(branch_and_bound).
