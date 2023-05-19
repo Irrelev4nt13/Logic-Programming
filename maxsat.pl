@@ -3,8 +3,11 @@
  *      1. In this particular modeling we see the problem as the minimization of unsatisfied clauses.
  *           
  *      2. The predicate calculate_inner_sum given an element of the list F, i.e a list (clause) and S calculates and returns whether the clause is satified with 
- *         the current value assignments. If the clause containts negation we treat it by multipliying the index by -1 and then calculate the sum with the help of neg.
- *         Then the calculate predicate increase the M by 1 if and only if the clause is satisfied, then the recursion with element the tail of F continues.            
+ *         the current value assignments. If the clause containts negation we treat it by multipliying the index by -1 and then append the value in the list of Clauses.
+ *         Then the recursion with element the tail of F continues. Then we sum up the list of clauses with the help of the predicate sum from ic in order to find M and 
+ *         Cost. Until now the solution would be decent but not excellent, in order to fix that we think reversed. What I mean is we can first find the values for Clauses
+ *         and then, based on the values of the Clauses search for the values of S, this way we avoid finding symmetric solution which would cause our execution to take 
+ *         too long to finish.          
  *
  *      3. Finally, in order to achieve faster execution I created a go_all predicate which given a list of Select and Choice and Options it calls the maxsat/9 
  *         which takes as arguments the Select, Choice and Option. After the execution it prints the run time and move to the next combination. In that section I
