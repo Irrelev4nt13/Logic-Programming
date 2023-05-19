@@ -4,7 +4,7 @@
  *           
  *      2. The predicate calculate_inner_sum given an element of the list F, i.e a list (clause) and S calculates and returns whether the clause is satified with 
  *         the current value assignments. If the clause containts negation we treat it by multipliying the index by -1 and then calculate the sum with the help of neg.
- *         Then the calculate predicate increase the M by 1 if and only if the clause is satisfied, then the recursion with element the tail of F now continues.            
+ *         Then the calculate predicate increase the M by 1 if and only if the clause is satisfied, then the recursion with element the tail of F continues.            
  *
  *      3. Finally, in order to achieve faster execution I created a go_all predicate which given a list of Select and Choice and Options it calls the maxsat/9 
  *         which takes as arguments the Select, Choice and Option. After the execution it prints the run time and move to the next combination. In that section I
@@ -18,20 +18,21 @@
 :- lib(branch_and_bound).
 
 maxsat(NV, NC, D, F, S, M) :-
-    create_formula(NV, NC, D, F),
+    create_formula(NV, NC, D, F), !,
     length(S, NV),
     S #:: 0..1,
-    calculate(F, S, 0, Cost),
-    % Cost #= NC-M,
-    bb_min(search(S, 0, occurrence, indomain, complete, []), Cost, bb_options{strategy:dichotomic}),
-    M #= NC-Cost.
-
-
+    calculate(F, S, [], Clauses),
+    M #= sum(Clauses),
+    Cost #= NC-M,
+    bb_min((search(Clauses, 0, input_order, indomain_reverse_split, complete, []),
+        search(S, 0, input_order, indomain_reverse_split, complete, [])), 
+        Cost, 
+        bb_options{strategy:restart}).
 
 calculate([], _, M, M).
 calculate([H|T], S, SM, M):-
     calculate_inner_sum(H, S, 0, S1),
-    SM1 #= eval(SM + eval(neg(S1))),
+    append(SM, [S1], SM1),
     calculate(T, S, SM1, M).
 
 calculate_inner_sum([], _, TS, TS).
@@ -57,9 +58,13 @@ maxsat(NV, NC, D, F, S, M, Select, Choice, Option) :-
     writeln(F),
     length(S, NV),
     S #:: 0..1,
-    calculate(F, S, 0, Cost),
-    bb_min(search(S, 0, Select, Choice, complete, []), Cost, bb_options{strategy:Option}),
-    M #= NC-Cost.
+    calculate(F, S, [], Clauses),
+    M #= sum(Clauses),
+    Cost #= NC-M,
+    bb_min((search(Clauses, 0, Select, Choice, complete, []),
+        search(S, 0, Select, Choice, complete, [])), 
+        Cost, 
+        bb_options{strategy:Option}).
 
 go_all(NV, NC, D, Seed, Select, Choice, Option):-
     cputime(T1),
@@ -70,36 +75,36 @@ go_all(NV, NC, D, Seed, Select, Choice, Option):-
     write(T),
     writeln(' secs.').
 
-% I tested the second to last example with in order to see differences in time because the previous 
+% I tested the second to last example in order to see differences in time because the previous 
 % had very small differences in terms of time between the each select and choice and option which is 
 % not ideal in order to decide what's fastest.
 % Below are noted the top 5 fastest combinations in ascending time order.
 % 
 % --------------------------------
-% Select: occurrence Choice: indomain_random Option: dichotomic NV: 40 NC: 120 D: 10
+% Select: input_order Choice: indomain_reverse_split Option: restart NV: 50 NC: 250 D: 9
 % --------------------------------
-% Time: 0.0145628949999974 secs.
-
+% Time: 0.0671332379999967 secs.
+% 
 % --------------------------------
-% Select: occurrence Choice: indomain_middle Option: dichotomic NV: 40 NC: 120 D: 10
+% Select: input_order Choice: outdomain_min Option: dichotomic NV: 50 NC: 250 D: 9
 % --------------------------------
-% Time: 0.0148123329999947 secs.
-
+% Time: 0.0674608180000007 secs.
+% 
 % --------------------------------
-% Select: occurrence Choice: indomain Option: dichotomic NV: 40 NC: 120 D: 10
+% Select: input_order Choice: outdomain_min Option: restart NV: 50 NC: 250 D: 9
 % --------------------------------
-% Time: 0.014841662000002 secs.
-
+% Time: 0.0676205489999973 secs.
+% 
 % --------------------------------
-% Select: most_constrained Choice: indomain_random Option: dichotomic NV: 40 NC: 120 D: 10
+% Select: input_order Choice: indomain_reverse_split Option: step NV: 50 NC: 250 D: 9
 % --------------------------------
-% Time: 0.0149125820000009 secs.
-
+% Time: 0.0679708639999888 secs.
+% 
 % --------------------------------
-% Select: occurrence Choice: outdomain_max Option: dichotomic NV: 40 NC: 120 D: 10
+% Select: input_order Choice: indomain_reverse_split Option: continue NV: 50 NC: 250 D: 9
 % --------------------------------
-% Time: 0.0149493939999985 secs.
-
+% Time: 0.0692036359999975 secs.
+% 
 go_all :-
     member(Select, [anti_first_fail,
                     first_fail,
@@ -109,10 +114,10 @@ go_all :-
                     most_constrained,
                     occurrence,
                     smallest]),
-    Seed is 1000, 
-    NV is 40, 
-    NC is 120, 
-    D is 10,
+    Seed is 567, 
+    NV is 50, 
+    NC is 250, 
+    D is 9,
     member(Choice, [indomain,
                     indomain_interval,
                     indomain_max,
