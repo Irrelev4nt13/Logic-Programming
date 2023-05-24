@@ -64,16 +64,6 @@ reverse_list([H|T], SoFar, Reversed):-
     append(SoFar, [RH], NewSoFar),
     reverse_list(T, NewSoFar, Reversed).
 
-% transpose([], []):- !.
-% transpose([[]|_], []):- !.
-% transpose(Matrix, [Column|Columns]) :-
-%     transposeColumn(Matrix, Column, RestMatrix),
-%     transpose(RestMatrix, Columns).
-
-% transposeColumn([], [], []):-!.
-% transposeColumn([[X|Xs]|Rows], [X|Column], [Xs|RestRows]) :-
-%     transposeColumn(Rows, Column, RestRows).
-
 get_transpose(D, D, _, Transposed, Transposed).
 get_transpose(I, D, Solution, SoFar, Transposed):-
     I1 #= I+1,
