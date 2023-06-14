@@ -24,26 +24,28 @@
 
 % For the csp model the ic is faster 
 assignment_csp(NP, MT, ASP, ASA):-
-    findall(X, activity(X, _), A), length(A, NA), length(AVR, NA),
+    findall(X, activity(X, _), A), length(A, NA), length(AVR, NA), length(W, NP),
     AVR #:: 1..NP,
     % AVR :: 1..NP,
-    constraints(AVR, A, NP, MT),
+    constraints(AVR, A, W, NP, MT),
     search(AVR, 0, input_order, indomain, complete, []),
     findall(Elem-X, (between(1, NA, Index), get_ith(Index, A, Elem), get_ith(Index, AVR, X)), ASA),
-    findall(PId-APIds-T, (between(1, NP, PId), findall(APId, member(APId-PId, ASA), APIds), sum_time(APIds, 0, T)), ASP).
+    findall(PId-APIds-WT, (between(1, NP, PId), findall(APId, member(APId-PId, ASA), APIds), get_ith(PId, W, WT)), ASP).
 
-constraints(AVR, A, NP, MT):-
-    overload(AVR, A, 0, NP, MT),
+constraints(AVR, A, W, NP, MT):-
+    overload(AVR, A, W, 0, NP, MT),
     symmetric(AVR),
     overlap(AVR, A, 1).
 
-overload(_, _, NP, NP, _).
-overload(AVR, A, I, NP, MT):-
+overload(_, _, _, NP, NP, _).
+overload(AVR, A, [H|T], I, NP, MT):-
     I < NP,
     I1 is I+1,
     overload_helper(AVR, A, I1, 0, WorkLoad),
-    eval(WorkLoad) #=< MT,
-    overload(AVR, A, I1, NP, MT).
+    % eval(WorkLoad) #=< MT,
+    % H #= eval(WorkLoad),
+    H #= eval(WorkLoad), H #=< MT,
+    overload(AVR, A, T, I1, NP, MT).
 
 overload_helper([], [], _, WorkLoad, WorkLoad).
 overload_helper([X|Xs], [A|As], P, Sum, WorkLoad):-
@@ -254,71 +256,43 @@ go_all_1 :-
 % find lower bound of the cost which if the bb_min finds it, it will stop the iteration
 % from is the attribute for the lower bound
 
-% assignment_opt(0, 3, 14, 0, 0, ASP, ASA, 0).
+% assignment_opt(0, 3, 14, 0, 0, ASP, ASA, Cost).
 
 % assignment_opt(16, 5, 15, 1.0, 0, ASP, ASA, Cost).
 
 assignment_opt(NF, NP, MT, F, T, ASP, ASA, Cost):-
     (NF =:= 0 -> 
     findall(X, activity(X, _), A); 
-    get_activities(0, NF, [], A)),
-    length(A, NA), length(AVR, NA),
+    get_activities(0, NF, [], A)), 
+    length(A, NA), length(AVR, NA), length(W, NP),
     totaltime(A, 0, D),
     A1 is integer(round(D/NP)),
+    % nl, write('A = '), writeln(A1), nl,
     AVR #:: 1..NP,
-    constraints(AVR, A, NP, MT),
-    % search(AVR, 0, input_order, indomain, complete, []),
-    length(Persons, NP), 
-    weight(AVR, A, NA, Persons, 0, NP),
-    cost(Persons, A1, 0, Cost1),
-    writeln(Persons),
-    Cost #= eval(Cost1),
-    bb_min(search(AVR, 0, input_order, indomain_reverse_split, complete, []), Cost, bb_options{delta:F,timeout:T}),
+    constraints(AVR, A, W, NP, MT),
+    % W #:: 1..2,
+    % nl,write('X = '), writeln(AVR), nl,
+    % write('W = '), writeln(W),nl,
+    cost(W, A1, 0, C),
+    Cost #= eval(C),
+    % nl,writeln(Cost).
+    bb_min(search(AVR, 0, input_order, indomain_reverse_split, complete, []), Cost, bb_options{from:1,delta:F,timeout:T}),
     findall(Elem-X, (between(1, NA, Index), get_ith(Index, A, Elem), get_ith(Index, AVR, X)), ASA),
-    findall(PId-APIds-T1, (between(1, NP, PId), findall(APId, member(APId-PId, ASA), APIds), sum_time(APIds, 0, T1)), ASP).
+    findall(PId-APIds-WT, (between(1, NP, PId), findall(APId, member(APId-PId, ASA), APIds), get_ith(PId, W, WT)), ASP).
 
-get_activities(NF, NF, A, A).
+% temp([]).
+% temp([H|T]):-
+%     H #:: ,
+%     temp(T).
+
+get_activities(NF, NF, A, A):- !.
 get_activities(I, NF, SoFar, A):-
     I < NF, 
     I1 is I+1,
     activity(X, _),
-    \+member(X, SoFar),
+    \+member(X, SoFar), !,
     append(SoFar, [X], NewSoFar),
     get_activities(I1, NF, NewSoFar, A).
-
-weight(_, _, _, [], NP, NP).
-weight(AVR, A, NA, [H|T], I, NP):-
-    I < NP, 
-    I1 is I + 1, 
-    findall(Assignment, (between(1, NA, Index), get_ith(Index, A, Assignment), get_ith(Index, AVR, X), X #= I1), L), 
-    % length(L, Y),
-    nl,writeln(L),nl,
-    % weight(L)
-    weight_helper(L, 0, W),
-    % writeln(L),
-    % writeln(W), nl,
-    H #= eval(W),
-    weight(AVR, A, NA, T, I1, NP).
-
-weight_helper([], W, W).
-weight_helper([H|T], Sum, W):-
-    activity(H, act(S, F)),
-    Sum1 = (F-S) + Sum,
-    weight_helper(T, Sum1, W).
-
-overload(_, _, NP, NP, _).
-overload(AVR, A, I, NP, MT):-
-    I < NP,
-    I1 is I+1,
-    overload_helper(AVR, A, I1, 0, WorkLoad),
-    eval(WorkLoad) #=< MT,
-    overload(AVR, A, I1, NP, MT).
-
-overload_helper([], [], _, WorkLoad, WorkLoad).
-overload_helper([X|Xs], [A|As], P, Sum, WorkLoad):-
-    activity(A, act(S, F)),
-    Sum1 = (((X #= P)*(F-S)) + Sum),
-    overload_helper(Xs, As, P, Sum1, WorkLoad).
 
 totaltime([], TT, TT).
 totaltime([H|T], Sum, TT):-
@@ -328,8 +302,8 @@ totaltime([H|T], Sum, TT):-
 
 cost([], _, Cost, Cost).
 cost([W|T], A, Sum, Cost):-
-    TempSum = (A - eval(W)),
-    Sum1 = eval((TempSum * TempSum) + Sum),
+    TempSum #= A - W,
+    Sum1 = (TempSum * TempSum) + Sum,
     % write(W), write(' '), write(TempSum), write(' '), write(Sum), write(' '), writeln(Sum1),
     cost(T, A, Sum1, Cost).
     
