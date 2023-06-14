@@ -276,7 +276,7 @@ assignment_opt(NF, NP, MT, F, T, ASP, ASA, Cost):-
     cost(W, A1, 0, C),
     Cost #= eval(C),
     % nl,writeln(Cost).
-    bb_min(search(AVR, 0, input_order, indomain_reverse_split, complete, []), Cost, bb_options{from:1,delta:F,timeout:T}),
+    bb_min(search(AVR, 0, input_order, , complete, []), Cost, bb_options{from:1,delta:F,timeout:T}),
     findall(Elem-X, (between(1, NA, Index), get_ith(Index, A, Elem), get_ith(Index, AVR, X)), ASA),
     findall(PId-APIds-WT, (between(1, NP, PId), findall(APId, member(APId-PId, ASA), APIds), get_ith(PId, W, WT)), ASP).
 
@@ -299,6 +299,7 @@ totaltime([H|T], Sum, TT):-
     activity(H, act(S, F)),
     Sum1 is Sum + (F - S), 
     totaltime(T, Sum1, TT).
+
 
 cost([], _, Cost, Cost).
 cost([W|T], A, Sum, Cost):-
