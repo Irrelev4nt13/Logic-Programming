@@ -2,23 +2,10 @@
  *
  */
 
-% assignment_csp(3, 14, ASP, ASA).
-% assignment_csp(2, 40, ASP, ASA).
-% assignment_csp(3, 13, ASP, ASA).
-% findall(sol, assignment_csp(5, 8, _, _), Solutions), length(Solutions, N).
-% findall(sol, assignment_csp(5, 9, _, _), Solutions), length(Solutions, N).
-
-% assignment_csp(2, 10, ASP, ASA).
-% findall(sol, assignment_csp(2, 10, _, _), Solutions), length(Solutions, N).
-
-% findall(sol, assignment_csp(3, 14, _, _), Solutions), length(Solutions, N).
-
-
 :- compile("activities/activity_big").
 
-% I had to comment the ic lib because in the assignment_opt I used gfd which was better
-% If you would like to see the max potential of the csp comment the gfd lib and uncomment the ic
 % :- lib(gfd).
+% :- lib(gfd_search).
 :- lib(ic).
 :- lib(branch_and_bound).
 
@@ -42,8 +29,6 @@ overload(AVR, A, [H|T], I, NP, MT):-
     I < NP,
     I1 is I+1,
     overload_helper(AVR, A, I1, 0, WorkLoad),
-    % eval(WorkLoad) #=< MT,
-    % H #= eval(WorkLoad),
     H #= eval(WorkLoad), H #=< MT,
     overload(AVR, A, T, I1, NP, MT).
 
@@ -197,28 +182,28 @@ go_all_1(NP, MT, Select, Choice):-
 % Time: 1.800764776 secs.
 %
 go_all_1 :-
-    member(Select, [anti_first_fail,
+    member(Select, [
+                    anti_first_fail,
                     first_fail,
                     input_order,
                     largest,
                     max_regret,
                     most_constrained,
                     occurrence,
-                    smallest]),
+                    smallest
+                    ]),
     NP is 5, 
     MT is 9,
-    member(Choice, [indomain,
+    member(Choice, [
+                    indomain,
                     indomain_interval,
                     indomain_max,
                     indomain_median,
                     indomain_min,
                     indomain_random,
                     indomain_reverse_split,
-                    indomain_split]),
-    % member(Option, [continue,
-    %                 restart,
-    %                 step,
-    %                 dichotomic]),
+                    indomain_split
+                    ]),
     nl,
     write('--------------------------------'),
     nl,
@@ -226,8 +211,6 @@ go_all_1 :-
     write(Select),
     write(' Choice: '),
     write(Choice),
-    % write(' Option: '),
-    % write(Option),
     write(' NP: '),
     write(NP),
     write(' MT: '),
@@ -239,60 +222,33 @@ go_all_1 :-
     fail.
 
 
-% assignment_opt(10, 5, 15, 1.0, 0, ASP, ASA, Cost).
-% assignment_opt(20, 5, 25, 1.0, 0, ASP, ASA, Cost).
-% assignment_opt(30, 4, 50, 1.0, 0, ASP, ASA, Cost).
-% assignment_opt(50, 7, 60, 1.0, 0, ASP, ASA, Cost).
-% assignment_opt(70, 10, 80, 1.0, 20, ASP, ASA, Cost).
-% assignment_opt(80, 10, 65, 0.8, 0, ASP, ASA, Cost).
-% assignment_opt(0, 12, 100, 0.9, 10, ASP, ASA, Cost).
-
-
-% assignment_opt(100, 50, 200, 1.0, 60, ASP, ASA, Cost).
-% assignment_opt(200, 100, 100, 0.9, 120, ASP, ASA, Cost).
-% assignment_opt(0, 120, 80, 0.8, 180, ASP, ASA, Cost).
-
-% heuristic ascending workload
-% find lower bound of the cost which if the bb_min finds it, it will stop the iteration
-% from is the attribute for the lower bound
-
-% assignment_opt(0, 3, 14, 0, 0, ASP, ASA, Cost).
-
-% assignment_opt(16, 5, 15, 1.0, 0, ASP, ASA, Cost).
-
+% For the opt model the ic is faster 
 assignment_opt(NF, NP, MT, F, T, ASP, ASA, Cost):-
     (NF =:= 0 -> 
-    findall(X, activity(X, _), A); 
-    get_activities(0, NF, [], A)), 
-    length(A, NA), length(AVR, NA), length(W, NP),
-    totaltime(A, 0, D),
-    A1 is integer(round(D/NP)),
-    % nl, write('A = '), writeln(A1), nl,
+    findall(X, activity(X, _), As); 
+    get_activities(0, NF, [], As)), 
+    length(As, NA), length(AVR, NA), length(W, NP),
+    totaltime(As, 0, D),
+    A is integer(round(D/NP)),
     AVR #:: 1..NP,
-    constraints(AVR, A, W, NP, MT),
-    % W #:: 1..2,
-    % nl,write('X = '), writeln(AVR), nl,
-    % write('W = '), writeln(W),nl,
-    cost(W, A1, 0, C),
+    % AVR :: 1..NP,
+    constraints(AVR, As, W, NP, MT),
+    cost(W, A, 0, C),
     Cost #= eval(C),
-    % nl,writeln(Cost).
-    bb_min(search(AVR, 0, input_order, , complete, []), Cost, bb_options{from:1,delta:F,timeout:T}),
-    findall(Elem-X, (between(1, NA, Index), get_ith(Index, A, Elem), get_ith(Index, AVR, X)), ASA),
+    LB #= abs(D-(A*NP)),
+    bb_min(search(AVR, 0, most_constrained, heuristic(W, _), complete, []), Cost, bb_options{from:LB,delta:F,timeout:T}),
+    % bb_min(gfd_search:search(AVR, 0, input_order, heuristic(W, _), complete, []), Cost, bb_options{from:LB,delta:F,timeout:T}),
+    findall(Elem-X, (between(1, NA, Index), get_ith(Index, As, Elem), get_ith(Index, AVR, X)), ASA),
     findall(PId-APIds-WT, (between(1, NP, PId), findall(APId, member(APId-PId, ASA), APIds), get_ith(PId, W, WT)), ASP).
 
-% temp([]).
-% temp([H|T]):-
-%     H #:: ,
-%     temp(T).
-
-get_activities(NF, NF, A, A):- !.
-get_activities(I, NF, SoFar, A):-
+get_activities(NF, NF, As, As):- !.
+get_activities(I, NF, SoFar, As):-
     I < NF, 
     I1 is I+1,
     activity(X, _),
     \+member(X, SoFar), !,
     append(SoFar, [X], NewSoFar),
-    get_activities(I1, NF, NewSoFar, A).
+    get_activities(I1, NF, NewSoFar, As).
 
 totaltime([], TT, TT).
 totaltime([H|T], Sum, TT):-
@@ -300,12 +256,157 @@ totaltime([H|T], Sum, TT):-
     Sum1 is Sum + (F - S), 
     totaltime(T, Sum1, TT).
 
-
 cost([], _, Cost, Cost).
-cost([W|T], A, Sum, Cost):-
-    TempSum #= A - W,
+cost([W|T], As, Sum, Cost):-
+    TempSum #= As - W,
     Sum1 = (TempSum * TempSum) + Sum,
-    % write(W), write(' '), write(TempSum), write(' '), write(Sum), write(' '), writeln(Sum1),
-    cost(T, A, Sum1, Cost).
-    
-    
+    cost(T, As, Sum1, Cost).
+
+heuristic(X, In, In):-
+    (var(X) -> 
+        get_minimums(In, 0, [], Mins),
+        quicksort(Mins, Sorted),
+        member(_-P, Sorted),
+        X #= P ; true).
+
+quicksort([], []).
+quicksort([X-N|Tail], Sorted) :-
+    split(X, Tail, Small, Big),
+    quicksort(Small, SortedSmall),
+    quicksort(Big, SortedBig),
+    append(SortedSmall, [X-N|SortedBig], Sorted).
+
+gt(X, Y) :- X > Y.
+
+split(_, [], [], []).
+split(X, [Y|Tail], [Y|Small], Big) :-
+    gt(X, Y),
+    !,
+    split(X, Tail, Small, Big).
+split(X, [Y|Tail], Small, [Y|Big]) :-
+    split(X, Tail, Small, Big).
+
+get_minimums([], _, L, L).
+get_minimums([H|T], I, SoFar, L):-
+    get_min(H, X),
+    I1 is I+1,
+    append(SoFar, [X-I1], NewSoFar),
+    get_minimums(T, I1, NewSoFar, L).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%% Testing multiple Select options %%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+assignment_opt(NF, NP, MT, F, T, ASP, ASA, Cost, Select):-
+    (NF =:= 0 -> 
+    findall(X, activity(X, _), As); 
+    get_activities(0, NF, [], As)), 
+    length(As, NA), length(AVR, NA), length(W, NP),
+    totaltime(As, 0, D),
+    A is integer(round(D/NP)),
+    AVR #:: 1..NP,
+    % AVR :: 1..NP,
+    constraints(AVR, As, W, NP, MT),
+    cost(W, A, 0, C),
+    Cost #= eval(C),
+    LB #= abs(D-(A*NP)),
+    bb_min(search(AVR, 0, Select, heuristic(W, _), complete, []), Cost, bb_options{from:LB,delta:F,timeout:T}),
+    % bb_min(gfd_search:search(AVR, 0, Select, heuristic(W, _), complete, []), Cost, bb_options{from:LB,delta:F,timeout:T}), 
+    findall(Elem-X, (between(1, NA, Index), get_ith(Index, As, Elem), get_ith(Index, AVR, X)), ASA),
+    findall(PId-APIds-WT, (between(1, NP, PId), findall(APId, member(APId-PId, ASA), APIds), get_ith(PId, W, WT)), ASP).
+
+go_all_2(NF, NP, MT, F, T, Select):-
+    cputime(T1),
+    assignment_opt(NF, NP, MT, F, T, _, _, Cost, Select),
+    cputime(T2),
+    T3 is T2-T1,
+    write('The cost is '),
+    writeln(Cost),
+    write('Time: '),
+    write(T3),
+    writeln(' secs.').
+
+% I tested the example with 80 activities in order to see differences in time because the previous 
+% had very small differences in terms of time between the each select and choice and option 
+% which is not ideal in order to decide what's fastest.
+% Below are noted all combinations in ascending time order.
+% 
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%% TOP VALUES FOR IMPLEMENTATION WITH GFD %%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% --------------------------------
+% Select: most_constrained NF: 80 NP: 10 MT: 65 F: 0.8 T: 0
+% --------------------------------
+% The cost is 1
+% Time: 1.5152382 secs.
+% 
+% --------------------------------
+% Select: first_fail NF: 80 NP: 10 MT: 65 F: 0.8 T: 0
+% --------------------------------
+% The cost is 1
+% Time: 41.716426506 secs.
+% 
+% --------------------------------
+% Select: input_order NF: 80 NP: 10 MT: 65 F: 0.8 T: 0
+% --------------------------------
+% The cost is 1
+% Time: 153.449480654 secs.
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%% TOP VALUES FOR IMPLEMENTATION WITH IC %%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% --------------------------------
+% Select: most_constrained NF: 80 NP: 10 MT: 65 F: 0.8 T: 0
+% --------------------------------
+% The cost is 1
+% Time: 0.966187043 secs.
+% 
+% --------------------------------
+% Select: first_fail NF: 80 NP: 10 MT: 65 F: 0.8 T: 0
+% --------------------------------
+% The cost is 1
+% Time: 9.758394238 secs.
+% 
+% --------------------------------
+% Select: input_order NF: 80 NP: 10 MT: 65 F: 0.8 T: 0
+% --------------------------------
+% The cost is 1
+% Time: 22.743701473 secs.
+% 
+go_all_2 :-
+    member(Select, [
+                    anti_first_fail,
+                    first_fail,
+                    input_order,
+                    largest,
+                    max_regret,
+                    most_constrained,
+                    occurrence,
+                    smallest
+                    ]),
+    NF is 80,
+    NP is 10, 
+    MT is 65,
+    F is 0.8, 
+    T is 0,
+    nl,
+    write('--------------------------------'),
+    nl,
+    write('Select: '),
+    write(Select),
+    write(' NF: '),
+    write(NF),
+    write(' NP: '),
+    write(NP),
+    write(' MT: '),
+    write(MT),
+    write(' F: '),
+    write(F),
+    write(' T: '),
+    write(T),
+    nl,
+    write('--------------------------------'),
+    nl,
+    go_all_2(NF, NP, MT, F, T, Select),
+    fail.
