@@ -1,8 +1,14 @@
 /* Notes:
  *
+ *	    1. Because of the fact that the activity_big has more assignments the csp needs different arguments to work. 
+ *         Try using first_fail instead of indomain.
+ *
+ *	    2. Like the previous assignments I made for the csp and the opt predicates a go_all predicate to find the best combinations
+ *
+ *	    3. I used tried both libraries, ic and gfd. I saw better results with ic. I have comment the necessary parts if you want to check the gfd implementation. 
+ *
+ *      4. If the NF > NA then the query is executing with all the activities in the correspoding input file.
  */
-
-:- compile("activities/activity_big").
 
 % :- lib(gfd).
 % :- lib(gfd_search).
@@ -224,9 +230,10 @@ go_all_1 :-
 
 % For the opt model the ic is faster 
 assignment_opt(NF, NP, MT, F, T, ASP, ASA, Cost):-
-    (NF =:= 0 -> 
-    findall(X, activity(X, _), As); 
-    get_activities(0, NF, [], As)), 
+    findall(X, activity(X, _), TempAs), length(TempAs, TempNA),
+    ((NF =:= 0 ; NF > TempNA)-> 
+        As = TempAs, writeln(As) ;
+    get_activities(0, NF, [], As)),
     length(As, NA), length(AVR, NA), length(W, NP),
     totaltime(As, 0, D),
     A is integer(round(D/NP)),
@@ -298,9 +305,10 @@ get_minimums([H|T], I, SoFar, L):-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 assignment_opt(NF, NP, MT, F, T, ASP, ASA, Cost, Select):-
-    (NF =:= 0 -> 
-    findall(X, activity(X, _), As); 
-    get_activities(0, NF, [], As)), 
+    findall(X, activity(X, _), TempAs), length(TempAs, TempNA),
+    ((NF =:= 0 ; NF > TempNA)-> 
+        As = TempAs ;
+    get_activities(0, NF, [], As)),
     length(As, NA), length(AVR, NA), length(W, NP),
     totaltime(As, 0, D),
     A is integer(round(D/NP)),
